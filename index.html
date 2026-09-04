@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0e1b33" />
+  <title>Chemin du Kotel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600;1,700&family=Frank+Ruhl+Libre:wght@500;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/game.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="stage" aria-label="Jeu Bar Bat Mitsva"></canvas>
+    <header id="hud" hidden>
+      <div class="hud-left">
+        <p id="zone" class="zone"></p>
+        <p id="hint" class="hint"></p>
+      </div>
+      <div class="hud-right">
+        <p id="score" class="score">0/10</p>
+        <button id="btn-sound" type="button" class="icon-btn" aria-label="Son">♫</button>
+      </div>
+      <ul id="slots" class="slots"></ul>
+    </header>
+    <p id="toast" class="toast" hidden></p>
+    <div id="speech" class="speech" hidden>
+      <p class="speech-name"></p>
+      <p class="speech-line"></p>
+    </div>
+    <p id="blocked" class="blocked" hidden></p>
+    <div id="controls" hidden>
+      <button id="btn-left" type="button" aria-label="Reculer">←</button>
+      <button id="btn-right" type="button" aria-label="Avancer">→</button>
+    </div>
+    <section id="overlay" class="overlay">
+      <div class="card">
+        <p id="ov-kicker" class="kicker"></p>
+        <h1 id="ov-title"></h1>
+        <p id="ov-text"></p>
+        <div class="actions">
+          <button id="btn-play" type="button" class="btn primary"></button>
+          <button id="btn-share" type="button" class="btn" hidden></button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="js/game.js" defer></script>
+</body>
+</html>
