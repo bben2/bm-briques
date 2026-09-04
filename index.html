@@ -1,52 +1,408 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#0e1b33" />
-  <title>Chemin du Kotel</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600;1,700&family=Frank+Ruhl+Libre:wght@500;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/game.css" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0e1b33"/>
+<title>Ari au Kotel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Outfit:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+:root{--c1:#c8a24a;--c2:#0e1b33;--paper:#f6edd8}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#app{width:100%;height:100%;overflow:hidden;background:#1e2f52;color:var(--paper);font-family:Outfit,sans-serif;touch-action:none;user-select:none}
+html[dir=rtl] body{font-family:serif}
+canvas{position:absolute;inset:0;display:block;width:100%;height:100%;background:linear-gradient(#3d5a8a,#e8c48a)}
+#hud{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;z-index:5;pointer-events:none;flex-wrap:wrap}
+.pill{background:rgba(14,27,51,.82);border:1px solid rgba(200,162,74,.6);border-radius:999px;padding:7px 14px;font-weight:700}
+.gold{color:var(--c1)}
+.slots{display:flex;gap:4px;width:100%}
+.slots i{width:20px;height:20px;border-radius:5px;border:1px solid rgba(200,162,74,.45);background:rgba(14,27,51,.5)}
+.slots i.on{background:var(--c1)}
+#controls{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:center;gap:24px;z-index:6}
+#controls button{width:70px;height:70px;border-radius:50%;border:0;background:var(--c1);color:var(--c2);font-size:28px;font-weight:800;box-shadow:0 8px 0 #8a6a28}
+.toast,.speech{position:absolute;left:50%;transform:translateX(-50%);z-index:8;max-width:90vw;text-align:center;pointer-events:none}
+.toast{bottom:108px;background:rgba(14,27,51,.92);border:1px solid var(--c1);padding:8px 14px;border-radius:14px}
+.speech{bottom:150px;background:#f6edd8;color:#1a140c;padding:10px 16px;border-radius:16px}
+.overlay{position:absolute;left:0;right:0;bottom:100px;z-index:20;display:flex;justify-content:center;pointer-events:none}
+.overlay[hidden],[hidden]{display:none!important}
+.card{pointer-events:auto;width:min(92vw,400px);background:rgba(14,27,51,.92);border:1px solid var(--c1);border-radius:20px;padding:18px;text-align:center}
+.card h1{font-family:"Cormorant Garamond",serif;color:var(--c1);font-size:30px;margin:4px 0 8px}
+.btn{border:0;background:var(--c1);color:var(--c2);font-weight:800;padding:11px 20px;border-radius:999px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--paper);border:1px solid var(--c1)}
+#sound{pointer-events:auto;width:42px;height:42px;border-radius:12px;border:1px solid var(--c1);background:rgba(14,27,51,.8);color:var(--paper)}
+</style>
 </head>
 <body>
-  <div id="app">
-    <canvas id="stage" aria-label="Jeu Bar Bat Mitsva"></canvas>
-    <header id="hud" hidden>
-      <div class="hud-left">
-        <p id="zone" class="zone"></p>
-        <p id="hint" class="hint"></p>
-      </div>
-      <div class="hud-right">
-        <p id="score" class="score">0/10</p>
-        <button id="btn-sound" type="button" class="icon-btn" aria-label="Son">♫</button>
-      </div>
-      <ul id="slots" class="slots"></ul>
-    </header>
-    <p id="toast" class="toast" hidden></p>
-    <div id="speech" class="speech" hidden>
-      <p class="speech-name"></p>
-      <p class="speech-line"></p>
-    </div>
-    <p id="blocked" class="blocked" hidden></p>
-    <div id="controls" hidden>
-      <button id="btn-left" type="button" aria-label="Reculer">←</button>
-      <button id="btn-right" type="button" aria-label="Avancer">→</button>
-    </div>
-    <section id="overlay" class="overlay">
-      <div class="card">
-        <p id="ov-kicker" class="kicker"></p>
-        <h1 id="ov-title"></h1>
-        <p id="ov-text"></p>
-        <div class="actions">
-          <button id="btn-play" type="button" class="btn primary"></button>
-          <button id="btn-share" type="button" class="btn" hidden></button>
-        </div>
-      </div>
-    </section>
+<div id="app">
+<canvas id="c"></canvas>
+<div id="hud">
+  <div class="pill" id="who">Ari</div>
+  <div class="pill"><span class="gold" id="score">0</span>/10 · <span id="zone">Rue de Jérusalem</span></div>
+  <button id="sound" type="button">♫</button>
+  <div class="slots" id="slots"></div>
+</div>
+<p class="toast" id="toast" hidden></p>
+<div class="speech" id="speech" hidden><b id="sn"></b><div id="sl"></div></div>
+<div id="controls">
+  <button id="left" type="button">←</button>
+  <button id="right" type="button">→</button>
+</div>
+<section class="overlay" id="ov" hidden>
+  <div class="card">
+    <div style="letter-spacing:.14em;text-transform:uppercase;font-size:11px;color:var(--c1)" id="kick">Jérusalem</div>
+    <h1 id="ttl">Ari au Kotel</h1>
+    <p id="sub">Traverse la rue de Jérusalem, franchis la porte, glisse ton mot dans le Mur.</p>
+    <button class="btn" id="play" type="button">Jouer</button>
+    <button class="btn ghost" id="share" type="button" hidden>Partager</button>
   </div>
-  <script src="js/game.js" defer></script>
+</section>
+</div>
+<script>
+(() => {
+const TOTAL = 10;
+const I18N = {
+  fr: {
+    play:"Jouer", replay:"Rejouer", share:"Partager", copied:"Lien copié !",
+    title:(n)=>n+" au Kotel", sub:"Traverse Jérusalem, franchis la porte, glisse ton mot dans le Mur.",
+    readyM:(n,s)=>n+" est prêt ! Tu as trouvé "+s+"/10",
+    readyF:(n,s)=>n+" est prête ! Tu as trouvé "+s+"/10",
+    place:["Rue de Jérusalem","Porte de la Vieille Ville","Esplanade","Le Kotel"],
+    dad:(n)=>"Courage, "+n+". Le Mur t'attend.",
+    mom:(n)=>"Je suis fière de toi, "+n+".",
+    sib:(n)=>n+" ! Prends ça pour la route.",
+    gateWait:"Attends que le passage soit libre…",
+    wallAsk:"Touche la fente lumineuse pour glisser ton mot.",
+    wallDone:"Ton mot est dans le Mur.",
+    rescue:"Un mot t'attend au pied du Mur.",
+    items:{kippa:"Kippa",pin:"Barrette",tzedaka:"Pièce de tzedaka",drapeau:"Drapeau",kvittel:"Mot pour le Mur",siddur:"Livre de prières",gourde:"Gourde",olive:"Olivier",pierre:"Pierre de Jérusalem",sucrerie:"Sucrerie",photo:"Photo"}
+  },
+  en: {
+    play:"Play", replay:"Play again", share:"Share", copied:"Link copied!",
+    title:(n)=>n+" at the Kotel", sub:"Walk through Jerusalem, pass the gate, slip your note into the Wall.",
+    readyM:(n,s)=>n+" is ready! You found "+s+"/10",
+    readyF:(n,s)=>n+" is ready! You found "+s+"/10",
+    place:["Jerusalem street","Old City gate","Plaza","The Kotel"],
+    dad:(n)=>"Be strong, "+n+". The Wall is waiting.",
+    mom:(n)=>"I am so proud of you, "+n+".",
+    sib:(n)=>n+"! Take this for the road.",
+    gateWait:"Wait for the path to clear…",
+    wallAsk:"Tap the glowing crack to slip in your note.",
+    wallDone:"Your note is in the Wall.",
+    rescue:"A note is waiting at the foot of the Wall.",
+    items:{kippa:"Kippah",pin:"Hair pin",tzedaka:"Tzedakah coin",drapeau:"Flag",kvittel:"Note for the Wall",siddur:"Prayer book",gourde:"Flask",olive:"Olive",pierre:"Jerusalem stone",sucrerie:"Sweet",photo:"Photo"}
+  },
+  he: {
+    play:"שחק", replay:"שחק שוב", share:"שתף", copied:"הועתק!",
+    title:(n)=>n+" בכותל", sub:"עברו בירושלים, כנסו בשער, והכניסו פתק לכותל.",
+    readyM:(n,s)=>n+" מוכן! מצאת "+s+"/10",
+    readyF:(n,s)=>n+" מוכנה! מצאת "+s+"/10",
+    place:["רחוב בירושלים","שער העיר העתיקה","הרחבה","הכותל"],
+    dad:(n)=>"חזק, "+n+". הכותל מחכה לך.",
+    mom:(n)=>"אני גאה בך, "+n+".",
+    sib:(n)=>n+"! קח את זה לדרך.",
+    gateWait:"חכו שהמעבר יתפנה…",
+    wallAsk:"געו בסדק הזוהר.",
+    wallDone:"הפתק בכותל.",
+    rescue:"פתק ממתין לרגלי הכותל.",
+    items:{kippa:"כיפה",pin:"סיכה",tzedaka:"צדקה",drapeau:"דגל",kvittel:"פתק",siddur:"סידור",gourde:"בקבוק",olive:"זית",pierre:"אבן",sucrerie:"ממתק",photo:"תמונה"}
+  }
+};
+function parse() {
+  const q = new URLSearchParams(location.search);
+  const sexe = ((q.get("sexe")||"garcon").toLowerCase()==="fille") ? "fille" : "garcon";
+  let sc = (q.get("scenario")||"kotel").toLowerCase();
+  if (sc==="torah") sc="teva";
+  if (sc==="teva" && sexe==="fille") sc="valise";
+  const lang = ["fr","en","he"].includes((q.get("langue")||"fr").toLowerCase()) ? (q.get("langue")||"fr").toLowerCase() : "fr";
+  const cols = String(q.get("couleurs")||"#c8a24a,#0e1b33").split(",").map(s=>{s=decodeURIComponent(s.trim()); return s[0]==="#"?s:"#"+s;});
+  return {
+    enfant: q.get("enfant") || "Ari",
+    sexe, scenario: ["kotel","teva","valise"].includes(sc)?sc:"kotel",
+    pere: q.get("pere")||"Papa", mere: q.get("mere")||"Maman",
+    fratrie: (q.get("fratrie")||"Léa,Noa").split(",").map(s=>s.trim()).filter(Boolean).slice(0,5),
+    lieu: q.get("lieu")||"Jérusalem",
+    langue: lang,
+    c1: cols[0]||"#c8a24a", c2: cols[1]||"#0e1b33"
+  };
+}
+let cfg = parse();
+let T = I18N[cfg.langue]||I18N.fr;
+function applyTheme(){
+  T = I18N[cfg.langue]||I18N.fr;
+  document.documentElement.lang = cfg.langue==="he"?"he":cfg.langue;
+  document.documentElement.dir = cfg.langue==="he"?"rtl":"ltr";
+  document.documentElement.style.setProperty("--c1", cfg.c1);
+  document.documentElement.style.setProperty("--c2", cfg.c2);
+}
+applyTheme();
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d",{alpha:false});
+const $ = id => document.getElementById(id);
+function size(){
+  const dpr = Math.min(2, window.devicePixelRatio||1);
+  const w = Math.max(360, window.innerWidth||800);
+  const h = Math.max(280, window.innerHeight||600);
+  canvas.style.width = w+"px";
+  canvas.style.height = h+"px";
+  canvas.width = (w*dpr)|0;
+  canvas.height = (h*dpr)|0;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w,h};
+}
+let view = size();
+addEventListener("resize", ()=>{ view = size(); });
+const GIRL = /^(léa|lea|noa|sara|sarah|yael|chana|rivka|tamar|maya|lina|nina|eva|anna|esther|rachel)$/i;
+const world = {
+  x: 2.2, vx:0, facing:1, bob:0, t:0,
+  collected: new Set(), talked: new Set(),
+  items: [], npcs: [], playing: true, finished: false,
+  gateOpen: true, gateT:0, rescue:false, cam:0
+};
+function addItem(id,x,ess,by){ world.items.push({id,x,ess:!!ess,by:by||null,taken:false,bob:Math.random()*6}); }
+function addNpc(role,name,x,girl,gift){ world.npcs.push({role,name,x,girl:!!girl,gift:gift||null,spoken:false}); }
+function reset(){
+  world.x=2.2; world.vx=0; world.collected=new Set(); world.talked=new Set();
+  world.items=[]; world.npcs=[]; world.finished=false; world.rescue=false; world.gateT=0; world.cam=2.2;
+  const girl = cfg.sexe==="fille";
+  addItem(girl?"pin":"kippa", 5.2, true);
+  addItem("tzedaka", 8.0, true);
+  addItem("sucrerie", 11.5, false);
+  const sibs = cfg.fratrie.slice();
+  if(sibs[0]){ addNpc("sib",sibs[0],14.5,GIRL.test(sibs[0]),"drapeau"); addItem("drapeau",15.1,false,sibs[0]); }
+  else addItem("drapeau",15,false);
+  addItem("olive", 22, false);
+  addItem("pierre", 26, false);
+  if(sibs[1]){ addNpc("sib",sibs[1],28.5,GIRL.test(sibs[1]),"kvittel"); addItem("kvittel",29.1,true,sibs[1]); }
+  else addItem("kvittel",29,true);
+  addItem("siddur", 38, true);
+  addItem("gourde", 42, false);
+  addNpc("pere", cfg.pere, 46, false, null);
+  addNpc("mere", cfg.mere, 50, true, "photo");
+  addItem("photo", 50.6, true, cfg.mere);
+  sibs.slice(2).forEach((n,i)=>addNpc("sib",n,34+i*3,GIRL.test(n),null));
+  hud();
+}
+function hud(){
+  $("who").textContent = cfg.enfant;
+  $("score").textContent = world.collected.size;
+  const sl=$("slots"); sl.innerHTML="";
+  for(let i=0;i<TOTAL;i++){ const e=document.createElement("i"); if(i<world.collected.size) e.className="on"; sl.appendChild(e); }
+  const act = world.x<18?0:world.x<32?1:world.x<52?2:3;
+  $("zone").textContent = T.place[act];
+}
+function toast(m){ const e=$("toast"); e.textContent=m; e.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>e.hidden=true,2400); }
+function speak(n,l){ $("sn").textContent=n; $("sl").textContent=l; $("speech").hidden=false; setTimeout(()=>$("speech").hidden=true,2600); }
+const hold={l:false,r:false};
+function bind(el,k){ el.addEventListener("pointerdown",e=>{e.preventDefault();hold[k]=true;}); ["pointerup","pointerleave","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>hold[k]=false)); }
+bind($("left"),"l"); bind($("right"),"r");
+const keys={};
+addEventListener("keydown",e=>keys[e.key]=true);
+addEventListener("keyup",e=>keys[e.key]=false);
+canvas.addEventListener("pointerdown",e=>{
+  if(world.finished) return;
+  const r=canvas.getBoundingClientRect();
+  const nx=(e.clientX-r.left)/r.width;
+  hold.l = nx<0.35; hold.r = nx>0.65;
+  if(world.x>56 && world.collected.has("kvittel")) finishWall();
+});
+canvas.addEventListener("pointerup",()=>{hold.l=hold.r=false;});
+function post(type,extra){
+  const p=Object.assign({type},extra||{});
+  try{ parent!==window && parent.postMessage(p,"*"); }catch(_){}
+}
+addEventListener("message",ev=>{
+  const d=ev.data; if(!d||d.type!=="bm-config") return;
+  cfg=Object.assign(cfg,d);
+  if(typeof cfg.fratrie==="string") cfg.fratrie=cfg.fratrie.split(",").map(s=>s.trim()).filter(Boolean);
+  if(cfg.couleurs){ const c=String(cfg.couleurs).split(","); cfg.c1=c[0]||cfg.c1; cfg.c2=c[1]||cfg.c2; }
+  if(d.couleurs&&Array.isArray(d.couleurs)){ cfg.c1=d.couleurs[0]; cfg.c2=d.couleurs[1]; }
+  applyTheme(); fillTitle(); reset();
+});
+function fillTitle(){
+  $("kick").textContent=cfg.lieu;
+  $("ttl").textContent=T.title(cfg.enfant);
+  $("sub").textContent=T.sub;
+  $("play").textContent=T.play;
+  $("share").textContent=T.share;
+  document.title=T.title(cfg.enfant);
+}
+fillTitle();
+$("play").onclick=()=>{ $("ov").hidden=true; world.playing=true; };
+$("share").onclick=async()=>{
+  const text=(cfg.sexe==="fille"?T.readyF:T.readyM)(cfg.enfant, world.collected.size);
+  try{ if(navigator.share) await navigator.share({title:document.title,text,url:location.href}); else { await navigator.clipboard.writeText(location.href); toast(T.copied);} }
+  catch(_){ try{ await navigator.clipboard.writeText(location.href); toast(T.copied);}catch(__){} }
+};
+$("sound").onclick=()=>{ sfx.on=!sfx.on; $("sound").textContent=sfx.on?"🔊":"♫"; };
+const sfx={on:false, ac:null,
+  beep(f,d){ if(!this.on) return; try{ this.ac=this.ac||new (AudioContext||webkitAudioContext)(); const o=this.ac.createOscillator(),g=this.ac.createGain(); o.frequency.value=f; g.gain.value=.05; o.connect(g).connect(this.ac.destination); o.start(); o.stop(this.ac.currentTime+d);}catch(_){ } }
+};
+function finish(){
+  if(world.finished) return;
+  world.finished=true;
+  const n=world.collected.size;
+  $("ttl").textContent=(cfg.sexe==="fille"?T.readyF:T.readyM)(cfg.enfant,n);
+  $("sub").textContent="";
+  $("play").textContent=T.replay;
+  $("share").hidden=false;
+  $("ov").hidden=false;
+  $("play").onclick=()=>{ $("ov").hidden=true; $("share").hidden=true; reset(); world.playing=true; fillTitle(); };
+  post("bm-score",{trouve:n,total:TOTAL,enfant:cfg.enfant,scenario:cfg.scenario});
+}
+function finishWall(){ toast(T.wallDone); setTimeout(finish,800); }
+function update(dt){
+  world.t+=dt;
+  let dir=0;
+  if(hold.l||keys.ArrowLeft||keys.a||keys.A||keys.q) dir-=1;
+  if(hold.r||keys.ArrowRight||keys.d||keys.D) dir+=1;
+  world.vx = dir*6.4;
+  if(dir) world.facing=dir;
+  world.bob += dir? dt*14 : -world.bob*dt*8;
+  world.gateT+=dt;
+  world.gateOpen = (world.gateT%2.5)<1.6;
+  const nx=world.x+world.vx*dt;
+  if(!world.gateOpen && world.x<24.2 && nx>=24.0){ world.vx=0; toast(T.gateWait); }
+  else world.x=nx;
+  world.x=Math.max(1.2, Math.min(62, world.x));
+  world.cam += (world.x-world.cam)*Math.min(1,dt*4);
+  for(const it of world.items){
+    if(it.taken) continue;
+    it.bob+=dt*3;
+    if(it.by && !world.talked.has(it.by)) continue;
+    if(Math.abs(it.x-world.x)<1.05){
+      it.taken=true; world.collected.add(it.id); sfx.beep(880,.1); hud();
+      toast("+"+(T.items[it.id]||it.id));
+    }
+  }
+  for(const n of world.npcs){
+    if(!n.spoken && Math.abs(n.x-world.x)<1.4){
+      n.spoken=true; world.talked.add(n.name);
+      speak(n.name, n.role==="pere"?T.dad(cfg.enfant): n.role==="mere"?T.mom(cfg.enfant): T.sib(n.name));
+    }
+  }
+  if(world.x>54 && !world.collected.has("kvittel") && !world.rescue){
+    world.rescue=true; addItem("kvittel",56.5,true); toast(T.rescue);
+  }
+  if(world.x>57 && world.collected.has("kvittel") && !world.finished){
+    toast(T.wallAsk);
+  }
+  hud();
+}
+function rgb(h,a=0){
+  const n=h.replace("#","");
+  return [parseInt(n.slice(0,2),16)+a, parseInt(n.slice(2,4),16)+a, parseInt(n.slice(4,6),16)+a];
+}
+function col(h,a=0){ const c=rgb(h,a); return "rgb("+c.map(v=>Math.max(0,Math.min(255,v|0))).join(",")+")"; }
+function brick(x,y,w,h,color,studs=true,dep=12){
+  const top=col(color,36), right=col(color,-34), front=col(color,0);
+  ctx.fillStyle=top;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+w,y); ctx.lineTo(x+w+dep,y-dep); ctx.lineTo(x+dep,y-dep); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=right;
+  ctx.beginPath(); ctx.moveTo(x+w,y); ctx.lineTo(x+w+dep,y-dep); ctx.lineTo(x+w+dep,y-dep+h); ctx.lineTo(x+w,y+h); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=front; ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle="rgba(40,24,8,.22)"; ctx.strokeRect(x,y,w,h);
+  if(studs){
+    const n=Math.max(1,Math.floor(w/20));
+    for(let i=0;i<n;i++){
+      const sx=x+8+i*(w/n), sy=y+6;
+      ctx.fillStyle=col(color,55); ctx.beginPath(); ctx.ellipse(sx,sy,6,3.2,0,0,7); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(sx-2,sy-1,2.2,1.2,0,0,7); ctx.fill();
+    }
+  }
+}
+function fig(x,y,shirt,girl,kippah,name){
+  ctx.fillStyle="rgba(0,0,0,.18)"; ctx.beginPath(); ctx.ellipse(x+18,y+86,22,7,0,0,7); ctx.fill();
+  if(girl) brick(x+2,y+50,34,38,"#5a2848",false,7);
+  else { brick(x+4,y+60,13,28,"#2a2430",false,6); brick(x+21,y+60,13,28,"#2a2430",false,6); }
+  brick(x+2,y+20,34,40,shirt,true,7);
+  brick(x+6,y-4,26,26,"#e2b48a",false,6);
+  if(girl) brick(x+2,y-16,34,14,"#3a2418",false,6);
+  else if(kippah) brick(x+10,y-16,18,8,"#1a3058",true,5);
+  ctx.fillStyle="#2a1a12"; ctx.beginPath(); ctx.arc(x+13,y+6,1.6,0,7); ctx.arc(x+23,y+6,1.6,0,7); ctx.fill();
+  if(name){ ctx.fillStyle="#f6edd8"; ctx.font="700 12px Outfit,sans-serif"; ctx.textAlign="center"; ctx.fillText(name,x+18,y+102); }
+}
+function draw(){
+  view = view.w ? view : size();
+  if(canvas.width<10) view=size();
+  const w=view.w, h=view.h;
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0, col(cfg.c2,40));
+  g.addColorStop(0.45,"#6a8bb8");
+  g.addColorStop(1,"#e8c48a");
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#f2d27a"; ctx.beginPath(); ctx.arc(w*0.82,h*0.16,48,0,7); ctx.fill();
+  ctx.fillStyle="#ffe7a3"; ctx.beginPath(); ctx.arc(w*0.82,h*0.16,34,0,7); ctx.fill();
+  const scale = Math.min(64, Math.max(48, w/18));
+  const groundY = h*0.62;
+  const cam = world.cam;
+  const sx = (wx)=> (wx-cam)*scale + w*0.32;
+  const stones=["#e2cba6","#d4bc94","#c4a574","#b8966c"];
+  for(let i=Math.floor(cam-10); i<cam+16; i++){
+    brick(sx(i), groundY, scale-4, 28, stones[((i%4)+4)%4], false, 8);
+    brick(sx(i)-6, groundY+28, scale-4, 40, stones[(i+2)&3], false, 6);
+  }
+  const houses=[
+    [0,3,0.42,"#d7c09a"],[4,3.4,0.5,"#c9ae86"],[8,2.8,0.38,"#e2cba6"],
+    [16,3.2,0.46,"#c4a574"],[20,3.6,0.52,"#d4bc94"],[33,3,0.4,"#c9ae86"],
+    [36,3.3,0.48,"#b8966c"],[44,2.9,0.4,"#d7c09a"]
+  ];
+  for(const [hx,hw,hh,hc] of houses){
+    const x=sx(hx), y=groundY-hh*h, bw=hw*scale;
+    brick(x,y,bw,hh*h,hc,true,14);
+    ctx.fillStyle="rgba(40,60,90,.65)";
+    ctx.fillRect(x+bw*0.18,y+hh*h*0.28,18,16);
+    ctx.fillRect(x+bw*0.62,y+hh*h*0.28,18,16);
+    ctx.fillStyle="#6b3a24"; ctx.fillRect(x+bw*0.42,y+hh*h-46,20,46);
+  }
+  function tree(wx){ const x=sx(wx); brick(x+16,groundY-70,16,70,"#6b4a2b",false,6); brick(x,groundY-70,50,36,"#2f6b3a",true,8); brick(x+6,groundY-98,38,30,"#3c7a44",true,8); }
+  tree(12); tree(31); tree(41);
+  const gx=sx(24);
+  brick(gx-50, groundY-220, 36, 220, "#c4a574", true, 12);
+  brick(gx+70, groundY-220, 36, 220, "#b8966c", true, 12);
+  brick(gx-60, groundY-250, 176, 36, "#d7c09a", true, 12);
+  ctx.fillStyle = world.gateOpen ? "rgba(255,220,120,.28)" : "rgba(0,0,0,.4)";
+  ctx.beginPath(); ctx.ellipse(gx+28, groundY-90, 36, 88, 0,0,7); ctx.fill();
+  if(!world.gateOpen){
+    brick(gx-10, groundY-70, 70, 50, "#6a3a22", true, 10);
+  }
+  for(let row=0; row<8; row++){
+    for(let col=0; col<10; col++){
+      brick(sx(58)+col*28, groundY-24-row*26, 26, 24, stones[(row+col)%4], row===7, 6);
+    }
+  }
+  if(world.collected.has("kvittel") && !world.finished){
+    ctx.fillStyle="rgba(255,220,100,"+(0.4+Math.sin(world.t*5)*0.25)+")";
+    ctx.beginPath(); ctx.ellipse(sx(59.5)+40, groundY-90, 10, 16, 0,0,7); ctx.fill();
+  }
+  const icol={kippa:"#1c3a6e",pin:"#c45a8a",tzedaka:"#c8a24a",drapeau:"#2d5aa0",kvittel:"#f4e7c3",siddur:"#6b2a2a",gourde:"#3a7a8a",olive:"#3c6b38",pierre:"#b8966c",sucrerie:"#d45a7a",photo:"#eee4c8"};
+  for(const it of world.items){
+    if(it.taken) continue;
+    const x=sx(it.x), y=groundY-38+Math.sin(it.bob)*6;
+    brick(x,y,26,20, icol[it.id]||"#ddd", true, 8);
+  }
+  for(const n of world.npcs){
+    const shirt = n.role==="pere"?"#2c3a4c": n.role==="mere"?"#6b3a58": n.girl?"#7a4a6a":"#3a5a4a";
+    fig(sx(n.x), groundY-88, shirt, n.girl, !n.girl, n.name);
+  }
+  const bob=Math.sin(world.bob)*3;
+  fig(sx(world.x), groundY-88+bob, cfg.sexe==="fille"?"#8a3a5a":"#2a4a7a", cfg.sexe==="fille", cfg.sexe!=="fille", null);
+  if(world.x>22 && world.x<27){
+    ctx.fillStyle=world.gateOpen?"#4caf70":"#c62828";
+    ctx.beginPath(); ctx.arc(w-24,24,8,0,7); ctx.fill();
+  }
+}
+reset();
+hud();
+post("bm-ready",{enfant:cfg.enfant,scenario:cfg.scenario,langue:cfg.langue});
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(!world.finished) update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
