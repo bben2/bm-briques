@@ -1,2 +1,6 @@
 # bm-briques
-Mini-jeu Bar/Bat Mitsva — univers briques 3D, encapsulable en iframe, config URL + postMessage
+
+Mini-jeu Kotel. Moteur URL + postMessage inchanges.
+Rendu = assets peints (street.jpg, gate.png, kotel.jpg) + feuille briques.png.
+
+Heberger le dossier complet : index.html + assets/
